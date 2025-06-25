@@ -15,6 +15,19 @@ class GoogleSheetsService {
 
   async initialize() {
     try {
+      console.log('🔍 Initializing Google Sheets authentication...');
+      console.log('   Has GOOGLE_SERVICE_ACCOUNT_EMAIL:', !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL);
+      console.log('   Has GOOGLE_PRIVATE_KEY:', !!process.env.GOOGLE_PRIVATE_KEY);
+      console.log('   Has GOOGLE_CREDENTIALS_FILE:', !!process.env.GOOGLE_CREDENTIALS_FILE);
+      
+      // Debug: Show the first 50 characters of GOOGLE_CREDENTIALS_FILE to identify the issue
+      if (process.env.GOOGLE_CREDENTIALS_FILE) {
+        const credFile = process.env.GOOGLE_CREDENTIALS_FILE;
+        console.log('   GOOGLE_CREDENTIALS_FILE preview:', credFile.substring(0, 50) + '...');
+        console.log('   GOOGLE_CREDENTIALS_FILE type:', typeof credFile);
+        console.log('   GOOGLE_CREDENTIALS_FILE starts with {:', credFile.trim().startsWith('{'));
+      }
+      
       // Set up authentication using environment variables (better for production)
       if (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
         // Use service account from environment variables
@@ -25,21 +38,50 @@ class GoogleSheetsService {
           ['https://www.googleapis.com/auth/spreadsheets.readonly']
         );
         console.log('🔐 Using environment variable authentication');
+      } else if (process.env.GOOGLE_CREDENTIALS_FILE) {
+        // Check if GOOGLE_CREDENTIALS_FILE contains JSON content instead of a file path
+        const credentialsPath = process.env.GOOGLE_CREDENTIALS_FILE;
+        
+        if (credentialsPath.trim().startsWith('{')) {
+          // This is JSON content, not a file path - parse it directly
+          console.log('🔐 GOOGLE_CREDENTIALS_FILE contains JSON content, parsing directly...');
+          try {
+            const credentials = JSON.parse(credentialsPath);
+            this.auth = new google.auth.JWT(
+              credentials.client_email,
+              null,
+              credentials.private_key,
+              ['https://www.googleapis.com/auth/spreadsheets.readonly']
+            );
+            console.log('✅ Successfully parsed credentials from environment variable JSON');
+          } catch (parseError) {
+            console.error('❌ Failed to parse credentials JSON:', parseError.message);
+            throw new Error('Invalid JSON in GOOGLE_CREDENTIALS_FILE environment variable');
+          }
+        } else {
+          // This is a file path
+          console.log('🔐 Using explicit credentials file:', credentialsPath);
+          this.auth = new google.auth.GoogleAuth({
+            keyFile: credentialsPath,
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+          });
+        }
       } else {
-        // Fallback to credentials file for local development
+        // Fallback to default credentials file location
+        const defaultPath = path.join(__dirname, '../../credentials.json');
+        console.log('🔐 Using default credentials file:', defaultPath);
         this.auth = new google.auth.GoogleAuth({
-          keyFile: process.env.GOOGLE_CREDENTIALS_FILE || path.join(__dirname, '../../credentials.json'),
+          keyFile: defaultPath,
           scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
         });
-        console.log('🔐 Using credentials file authentication');
       }
 
       // Create sheets instance
       this.sheets = google.sheets({ version: 'v4', auth: this.auth });
       
-      console.log('Google Sheets service initialized successfully');
+      console.log('✅ Google Sheets service initialized successfully');
     } catch (error) {
-      console.error('Error initializing Google Sheets service:', error);
+      console.error('❌ Error initializing Google Sheets service:', error);
       throw error;
     }
   }
