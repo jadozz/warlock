@@ -6,7 +6,11 @@ class GoogleSheetsService {
   constructor() {
     this.sheets = null;
     this.auth = null;
-    this.spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+    this.spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || process.env.GOOGLE_SHEETS_ID;
+    console.log('🔍 GoogleSheetsService constructor:');
+    console.log('   GOOGLE_SHEETS_SPREADSHEET_ID:', process.env.GOOGLE_SHEETS_SPREADSHEET_ID);
+    console.log('   GOOGLE_SHEETS_ID:', process.env.GOOGLE_SHEETS_ID);
+    console.log('   Final spreadsheetId:', this.spreadsheetId);
   }
 
   async initialize() {
@@ -44,6 +48,21 @@ class GoogleSheetsService {
     try {
       console.log('🔍 Attempting to fetch range:', range);
       console.log('📋 Using spreadsheet ID:', this.spreadsheetId);
+      
+      // Safety check: ensure spreadsheetId is available
+      if (!this.spreadsheetId) {
+        console.error('❌ No spreadsheet ID available! Checking environment variables again...');
+        console.log('   GOOGLE_SHEETS_SPREADSHEET_ID:', process.env.GOOGLE_SHEETS_SPREADSHEET_ID);
+        console.log('   GOOGLE_SHEETS_ID:', process.env.GOOGLE_SHEETS_ID);
+        
+        // Try to recover the spreadsheet ID
+        this.spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || process.env.GOOGLE_SHEETS_ID;
+        console.log('   Recovered spreadsheetId:', this.spreadsheetId);
+        
+        if (!this.spreadsheetId) {
+          throw new Error('Missing spreadsheet ID. Please set GOOGLE_SHEETS_SPREADSHEET_ID or GOOGLE_SHEETS_ID environment variable.');
+        }
+      }
       
       if (!this.sheets) {
         await this.initialize();
