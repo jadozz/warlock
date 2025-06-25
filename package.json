@@ -1,0 +1,26 @@
+{
+  "name": "slack-warlock",
+  "version": "1.0.0",
+  "description": "Slack bot with OpenAI and Google Sheets integration",
+  "main": "src/app.js",
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["slack", "bot", "openai", "google-sheets"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@slack/bolt": "^3.14.0",
+    "openai": "^4.20.1",
+    "googleapis": "^126.0.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+} 
